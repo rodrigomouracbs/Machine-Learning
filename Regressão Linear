@@ -1,0 +1,256 @@
+from google.colab import drive
+drive.mount('/content/drive')
+
+# **Machine Learning - Regressão Linear**
+
+import pandas as pd
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
+import plotly.graph_objs as go
+import plotly.offline as py
+import plotly
+plotly.offline.init_notebook_mode()
+import datetime
+
+dataset = pd.read_csv('petr4.csv')
+
+#Transformando a coluna Date em uma coluna do tipo Datetime
+dataset['Date'] = pd.to_datetime(dataset['Date'])
+
+#Visualizando os dados
+dataset.tail()
+
+#Variação entre o preço de abertura e fechamento
+dataset['Variation'] = dataset['Close'].sub(dataset['Open'])
+
+dataset.head()
+
+**Visualização dos dados**
+
+#Configuração necessária para plotar no google colab
+import plotly.io as pio
+pio.renderers.default = 'colab'
+
+#Plota o valor dos preços no período analisado 2010 a 2017
+#Utiliza a biblioteca pyplot para plotar dados financeiros temporais
+%matplotlib inline
+x1 = dataset.Date
+y1 = dataset.Close
+data = [go.Scatter(x=x1, y=y1)]
+layout = go.Layout(xaxis=dict(range=['01-01-2010', '11-04-2017'],
+                              title='Ano'),
+                   yaxis=dict(range=[min(x1), max(y1)],
+                              title='Valor da Ação'
+                              ))
+fig = go.Figure(data=data, layout = layout)
+py.iplot(fig)
+plt.show()
+
+**Preços de 7 dias atrás - Mostra Candlestick**
+
+#Visualizando os Candlesticks
+dataset2 = dataset.head(7)
+dados = go.Candlestick(x=dataset2.Date,
+                       open=dataset2.Open,
+                       high=dataset2.High,
+                       low=dataset2.Low,
+                       close=dataset2.Close,showlegend=True)
+data = [dados]
+py.offline.iplot(data,filename='gráfico_candlestick')
+
+**Candles dos últimos 6 meses**
+
+#Visualizando preços em formato de candles dos últimos 6 meses
+dataset2=dataset.head(180)
+dados = go.Candlestick(x=dataset2.Date,
+                       open=dataset2.Open,
+                       high=dataset2.High,
+                       low=dataset2.Low,
+                       close=dataset2.Close,showlegend=True)
+data = [dados]
+py.offline.iplot(data,filename='gráfico_candlestick')
+
+#Plota a variação no período
+%matplotlib inline
+import matplotlib.dates as mdates
+import datetime as dt
+x = dataset['Date']
+y = dataset['Variation']
+plt.plot_date(x,y, color = 'r', fmt='r-')
+plt.xticks(rotation=30)
+plt.show()
+
+**Correlação de Features e classe**
+1.   **Classe - Variável observada**
+2.   **Feature - Variável estimadora**
+
+
+
+#Cria uma variável chamada treino
+treino = dataset
+
+#Plota a dispersão entre o preço de abertura (Open) e fechamento (Close) dos últimos 100 dias
+%matplotlib inline
+x = treino.Open[:100]
+y = treino.Close[:100]
+plt.scatter(x,y,color='b')
+plt.xlabel('preço de abertura')
+plt.ylabel('preço de fechamento')
+plt.axis([min(x),max(x),min(y),max(y)])
+plt.autoscale('False')
+plt.show()
+
+#Plota a dispersão entre o preço de máxima (high) e fechamento (Close) dos últimos 100 dias
+%matplotlib inline
+x = treino.High[:100]
+y = treino.Close[:100]
+plt.scatter(x,y,color='b')
+plt.xlabel('preço da máxima')
+plt.ylabel('preço de fechamento')
+plt.axis([min(x),max(x),min(y),max(y)])
+plt.autoscale('False')
+plt.show() 
+
+#Plota a dispersão entre o preço da mínima(Low) e fechamento (Close) dos últimos 100 dias.
+%matplotlib inline
+x = treino.Low[:100]
+y = treino.Close[:100]
+plt.scatter(x,y,color='b')
+plt.xlabel('preço de mínima')
+plt.ylabel('preço de fechamento')
+plt.axis([min(x),max(x),min(y),max(y)])
+plt.autoscale('False')
+plt.show() 
+
+#Plota a dispersão entre o volume e fechamento (Close) dos últimos 100 dias
+%matplotlib inline
+x = treino.Volume[:100]
+y = treino.Close[:100]
+plt.scatter(x,y,color='b')
+plt.xlabel('Volume')
+plt.ylabel('preço de fechamento')
+plt.axis([min(x),max(x),min(y),max(y)])
+plt.ticklabel_format(style='plain', axis='x')
+plt.autoscale('False')
+plt.xticks(rotation=45)
+plt.show() 
+
+**Separação dos dados de treino e a classe**
+
+#Variáveis do modelo
+features = ['Open', 'High', 'Low', 'Volume']
+treino = treino[features]
+
+#Visualizando os dados sem as classes
+treino.head()
+
+#Y recebe o preço de fechamento (classes)
+y = dataset['Close']
+
+#Visualizando o dataframe Y
+y
+
+#Treinando o algoritmo de regressão linear
+1.   **Divisão dos dados de forma aleatória (75% para treino e 25% para teste)**
+
+#Separando os dados
+X_treino, X_teste, y_treino, y_teste = train_test_split(treino, y, random_state=42)
+
+#Visualizando o dataframe 
+X_treino.head()
+
+X_teste.head()
+
+y_treino.head()
+
+y_teste.head()
+
+#Cria um objeto do tipo Linear Regression
+lr_model = LinearRegression()
+
+#Treinando o algoritmo
+lr_model.fit(X_treino, y_treino)
+
+#Visualizando os coeficientes
+lr_model.coef_
+
+#Predizendo 10 preços
+lr_model.predict(X_teste)[:10]
+
+#Visualizando preços observados
+y_teste[:10]
+
+%matplotlib inline
+#Armazena dados preditos em dataframe
+predicoes = pd.DataFrame(lr_model.predict(X_teste)[:10])
+
+#Armazena dados reais em dataframe
+y_teste2 = pd.DataFrame(y_teste[:10].values)
+
+#Define o estilo do gráfico
+plt.style.use('ggplot')
+
+#Definição de título de eixos do gráfico
+plt.xlabel('Preços')
+plt.ylabel('Indices')
+plt.title('Preços observados vs Preditos')
+
+#Ordena os valores e plota as linhas
+plt.scatter(predicoes.sort_values(by=0),predicoes.index)
+plt.scatter(y_teste2.sort_values(by=0), y_teste2.index)
+
+#Define Legenda do gráfic
+plt.legend(['Predicoes', 'Preços Reais'])
+
+# **Validando o modelo de regressão**
+
+y_teste.isnull().sum() #Verifica se existem valores nulos no conjunto de teste
+
+y_pred = lr_model.predict(X_teste)
+
+y_pred.shape
+
+y_teste.shape
+
+#mean squared error - valor ideal: 0
+mean_squared_error(y_teste, lr_model.predict(X_teste)) 
+
+mean_squared_error(y_teste, y_pred) 
+
+# RMSE - Root Mean Square Error
+# Utiliza unidades dependentes
+RMSE = mean_squared_error(y_teste, lr_model.predict(X_teste))**0.5
+RMSE
+
+# **Dá pra melhorar o modelo?**
+1.   Testando com as features Open e High
+2.   Normalização dos dados
+
+
+
+lr_model2 = LinearRegression(normalize=True)
+
+features = ['Open','High']
+treino2 = treino[features]
+
+treino2.head()
+
+#Separa os dados 75% treino e 25% teste
+X_treino, X_teste, y_treino, y_teste = train_test_split(treino2, y, random_state=42)
+
+#Treina o algoritmo
+lr_model2.fit(X_treino, y_treino)
+
+#Imprime os pesos
+lr_model2.coef_
+
+#Valida o modelo com RMSE
+RMSE = mean_squared_error(y_teste, lr_model2.predict(X_teste))**0.5
+RMSE
+
+#Valida o modelo com MSE
+MSE = mean_squared_error(y_teste, lr_model2.predict(X_teste))
+MSE
+
